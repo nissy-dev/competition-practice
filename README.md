@@ -1,2 +1,3 @@
 # ds-competition
-Data science competition
+
+Codes for data science competition
