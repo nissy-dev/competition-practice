@@ -7,7 +7,7 @@ def mean_spearmanr_correlation_score(y, y_pred):
     cnt = 0
     for col in range(y_pred.shape[1]):
         v = spearmanr(y_pred[:, col], y[:, col]).correlation
-        # 値が全部同じだとNanになるから除く
+        # remove nan
         if np.isnan(v):
             continue
         spearsum += v

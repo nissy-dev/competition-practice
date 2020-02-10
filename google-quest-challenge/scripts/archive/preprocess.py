@@ -1,4 +1,8 @@
 import re
+from bs4 import BeautifulSoup
+from nltk.corpus import stopwords
+
+ENG_STOPWORDS = set(stopwords.words("english"))
 
 
 def decontract(text):
@@ -38,8 +42,20 @@ def clean_number(x):
     return x
 
 
+def clean_html_tag(x):
+    bs = BeautifulSoup(x)
+    x = bs.get_text()
+    return x
+
+
+# def remove_stop_words(x, stop_words=ENG_STOPWORDS):
+#     x = [word for word in x if word not in stop_words]
+#     return x
+
+
 def text_preprocess(x):
     x = decontract(x)
+    x = clean_html_tag(x)
     x = clean_text(x)
     x = clean_number(x)
     return x
