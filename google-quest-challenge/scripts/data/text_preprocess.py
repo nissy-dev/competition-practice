@@ -56,7 +56,7 @@ def text_preprocess(x):
     return x
 
 
-# after splitting paragraph
+# when splitting paragraphs
 def remove_stop_words(x, stop_words=ENG_STOPWORDS):
     x = [word for word in x if word not in stop_words]
     return x
