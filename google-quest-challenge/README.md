@@ -1,4 +1,44 @@
-# NLP
+# Google Quest
+
+## コンペ反省 (WIP)
+
+### やったこと
+
+基本的に以下でやったことはほぼ全て効かなかった
+
+- NLP での基礎的ベクトルを作成 (全て精度はかなり悪い)
+  - LightGBM で回帰
+  - 独自 post processing
+- Bert のチューニング (全て精度を向上させなかった)
+  - 出力層に近い層での Dense 層を増やした
+  - 全データ学習
+  - custom loss
+    - focal loss (不均衡データに対する損失)
+      - Twitter でもあまりうまくいくケースないみたいな話
+  - multi task モデル
+  - カテゴリを Embedding して、Concat
+- 出力の rank average ensemble
+  - 唯一効いた
+  - Ensemble Guide を読んだ
+    - voting, rank average, weight average がよく使われている
+    - https://mlwave.com/kaggle-ensembling-guide/
+    - http://higepon.hatenablog.com/entry/2019/02/20/191900
+
+### やらなかったこと
+
+- XLNET や Roberta などの大きなモデルの準備
+  - Colab では Bert の学習の倍の時間がかかるため撤退
+- target を分けてモデリング
+  - 時間がなかった...
+  - 上位はモデルを工夫していると思っていた...
+
+### 反省
+
+- Bert はモデルを工夫しても精度はあまり上がらない
+  - 論文でもそうらしい...
+- どの検証ももう少し丁寧にやるとよかった
+  - Post Process についても各カラムについてやってみる
+  - やっぱりカラムごとの調査が不足していた
 
 ## 文章の前処理 (英語、分割前)
 
@@ -12,12 +52,13 @@ https://www.kaggle.com/sudalairajkumar/getting-started-with-text-preprocessing
 4. 大文字を小文字へ (embedding 側も同じ変換をしてあげる)
 5. 短縮系への変換
 6. 特殊文字を消す (もしくは変換する)
-7. stopword の除去
-8. スペルミスの変換
+7. スペルミスの変換
 
-以下はタスクによって考える
+以下はタスクによって考える  
+特に、文章の分散表現を得る場合はやらないことが多かった (文が不自然になるから...?)
 
-9. Lemmatization, Stemming (活用形を統一する, running, run, ran などを統一))
+8. stopwords の除去
+9. Lemmatization, Stemming (活用形を統一する, running, run, ran などを統一)
 10. 絵文字の変換
 11. 頻出単語やレアな単語の削除 (7 である程度行なっている & タスクによっては除かない方がいいケースも)
 
@@ -92,7 +133,7 @@ http://www.ie110704.net/2018/10/12/%E6%96%87%E6%9B%B8%E5%88%86%E6%95%A3%E8%A1%A8
 ## Bert (WIP)
 
 解説：https://qiita.com/Kosuke-Szk/items/4b74b5cce84f423b7125  
-やってみた：https://qiita.com/Jah524/items/2f651b479888ae352088
+Bert 入門 : https://www.slideshare.net/matsukenbook/bert-217710964
 
 - 双方向に Connect された Transformer モデル
 - 今までの次の単語を予測するタスクではなく、穴埋めのタスクを解くことで双方向の結合を実現
@@ -100,5 +141,5 @@ http://www.ie110704.net/2018/10/12/%E6%96%87%E6%9B%B8%E5%88%86%E6%95%A3%E8%A1%A8
 - Transformer とは..?
   - 文書生成タスクを解く
   - 文書識別なら Decoder は不要
-  - Decoder では、0~t の文字列を入力として、1~t+1 の文字列を得る
+  - Decoder では、0-t の文字列を入力として、1-t+1 の文字列を得る
   - Recurrent は不要なモデル → 文章の順番は Embeding して Vector として担保しているらしい

@@ -102,8 +102,8 @@ def text_preprocess(x):
     x = clean_contractions(x)
     x = clean_punctuation(x)
     # x = clean_special_chars(x)
-    x = clean_stopwords(x)
     x = fix_miss_spellings(x)
+    # x = clean_stopwords(x)
     # x = lemmatize(x)
     return x
 
