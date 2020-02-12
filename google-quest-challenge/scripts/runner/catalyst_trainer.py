@@ -12,16 +12,13 @@ from catalyst.utils import get_device, set_global_seed
 from catalyst.dl import SupervisedRunner
 from catalyst.dl.callbacks import EarlyStoppingCallback
 from sklearn.model_selection import KFold
-from src.models.nn import SimpleNN, create_data_loader
+from src.models.nn import SampleNN, create_data_loader
 from src.utils.metrics import mean_spearmanr_correlation_score
 
 
 def yaml_to_json(path_to_yaml):
     with open(path_to_yaml) as file:
-        # The FullLoader parameter handles the conversion from YAML
-        # # scalar values to Python the dictionary format
         params = yaml.load(file, Loader=yaml.FullLoader)
-
     return params
 
 
@@ -90,6 +87,7 @@ def main(train, test, features, target):
 
         # data
         X_train = train[features_cols]
+        # 目的変数の正規化は...?
         Y_train = train[target_cols]
         X_test = train[features_cols]
 
@@ -103,7 +101,7 @@ def main(train, test, features, target):
         # init models
         # TODO: set your model and learning condition
         # ここは関数を用意して、キーワードで取り出すようにできると汎用性は上がる
-        model = SimpleNN(input_dim=1000, out_dim=1).to(device)
+        model = SampleNN(input_dim=1000, out_dim=1).to(device)
         criterion = nn.BCELoss()
         optimizer = torch.optim.AdamW(model.parameters())
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)

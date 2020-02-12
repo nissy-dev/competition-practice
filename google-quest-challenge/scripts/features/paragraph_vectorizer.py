@@ -2,7 +2,7 @@ import nltk
 import warnings
 import numpy as np
 import pandas as pd
-from gensim.models import Word2Vec, FastText
+from gensim.models import Word2Vec, FastText, KeyedVectors  # noqa
 from gensim.models.doc2vec import Doc2Vec
 from gensim.models.doc2vec import TaggedDocument
 from sklearn.decomposition import TruncatedSVD
@@ -74,7 +74,7 @@ class Doc2VecVectorizer(object):
         self.dims = dims
 
     def fit_transform(self, X):
-        tagged_data = [TaggedDocument(words=nltk.word_tokenize(_d.lower()), tags=[str(i)])
+        tagged_data = [TaggedDocument(words=nltk.word_tokenize(_d), tags=[str(i)])
                        for i, _d in enumerate(X)]
         self.model = Doc2Vec(tagged_data, vector_size=self.dims)
         feature = np.array([self.model.docvecs[i] for i in range(len(X))])
@@ -84,7 +84,7 @@ class Doc2VecVectorizer(object):
         return df
 
     def transform(self, X):
-        words_list = [nltk.word_tokenize(sentence.lower()) for sentence in X]
+        words_list = [nltk.word_tokenize(sentence) for sentence in X]
         feature = np.array([self.model.infer_vector(words) for words in words_list])
         df = pd.DataFrame(data=feature,
                           columns=['doc2vec-' + str(i) for i in range(self.dims)])
@@ -95,6 +95,10 @@ class TfidfEmbeddingVectorizer(object):
     def __init__(self, word2vector=None, dims=100, use_word2vec=False):
         # receive pre-trained model
         self.word2vector = word2vector
+        # word2vector = KeyedVectors.load_word2vec_format(news_path, binary=True)
+        # famous pretrained models
+        # : fasttext-crawl-300d-2m/crawl-300d-2M.vec (binary=False)
+        # : GoogleNews-vectors-negative300.bin (binary=True)
         self.word2weight = None
         self.dims = dims
         self.use_word2vec = use_word2vec

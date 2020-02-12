@@ -1,64 +1,110 @@
 import re
+import nltk
+import string
 from bs4 import BeautifulSoup
-from nltk.corpus import stopwords
+from nltk.corpus import stopwords, wordnet
+from nltk.stem import WordNetLemmatizer
+from spellchecker import SpellChecker
+from constant import CONTRACTION_MAPPING, PUNCT_MAPPING
 
+
+# Constant
 ENG_STOPWORDS = set(stopwords.words("english"))
+WORDNET_MAP = {"N": wordnet.NOUN, "V": wordnet.VERB, "J": wordnet.ADJ, "R": wordnet.ADV}
+
+# Instance
+SpellCheckerInstance = SpellChecker()
+LemmatizerInstance = WordNetLemmatizer()
 
 
-def decontract(text):
-    text = re.sub(r"(W|w)on(\'|\’)t ", "will not ", text)
-    text = re.sub(r"(C|c)an(\'|\’)t ", "can not ", text)
-    text = re.sub(r"(Y|y)(\'|\’)all ", "you all ", text)
-    text = re.sub(r"(Y|y)a(\'|\’)ll ", "you all ", text)
-    text = re.sub(r"(I|i)(\'|\’)m ", "i am ", text)
-    text = re.sub(r"(A|a)isn(\'|\’)t ", "is not ", text)
-    text = re.sub(r"n(\'|\’)t ", " not ", text)
-    text = re.sub(r"(\'|\’)re ", " are ", text)
-    text = re.sub(r"(\'|\’)d ", " would ", text)
-    text = re.sub(r"(\'|\’)ll ", " will ", text)
-    text = re.sub(r"(\'|\’)t ", " not ", text)
-    text = re.sub(r"(\'|\’)ve ", " have ", text)
-    text = re.sub(r"(L|l)et(\'|\’)s", "let us", text)
-    text = re.sub(r"theres", "there is", text)
+def clean_html_tag(text):
+    """HTMLの除去"""
+    return BeautifulSoup(text, "lxml").text
+
+
+def clean_url(text):
+    """URLの修正"""
+    url_pattern = re.compile(r'https?://\S+|www\.\S+')
+    return url_pattern.sub(r'', text)
+
+
+def clean_number(text):
+    """数字の削除"""
+    return re.sub(r'\d +', '', text)
+
+
+def upper_to_lower(text):
+    """文字の小文字化"""
+    return text.lower()
+
+
+def clean_contractions(text, mapping=CONTRACTION_MAPPING):
+    """短縮系の修正"""
+    specials = ["’", "‘", "´", "`"]
+    for s in specials:
+        text = text.replace(s, "'")
+    text = ' '.join([mapping[t] if t in mapping else t for t in text.split(" ")])
     return text
 
 
-def clean_text(x):
-    x = str(x)
-    for punct in "/-'":
-        x = x.replace(punct, ' ')
-    for punct in '&':
-        x = x.replace(punct, f' {punct} ')
-    for punct in '?!.,"#$%\'()*+-/:;<=>@[\\]^_`{|}~' + '“”’':
-        x = x.replace(punct, '')
-    return x
+def clean_punctuation(text, punct=string.punctuation):
+    """特殊文字の削除"""
+    return text.translate(str.maketrans('', '', punct))
 
 
-def clean_number(x):
-    x = re.sub('[0-9]{5,}', '12345', x)
-    x = re.sub('[0-9]{4}', '1234', x)
-    x = re.sub('[0-9]{3}', '123', x)
-    x = re.sub('[0-9]{2}', '12', x)
-    return x
+def clean_special_chars(text, punct=string.punctuation, mapping=PUNCT_MAPPING):
+    """特殊文字の置換"""
+    for p in mapping:
+        text = text.replace(p, mapping[p])
+
+    for p in punct:
+        text = text.replace(p, f' {p} ')
+
+    # 例外の置換処理
+    specials = {'\u200b': ' ', '…': ' ... ', '\ufeff': '', 'करना': '', 'है': ''}
+    for s in specials:
+        text = text.replace(s, specials[s])
+
+    return text
 
 
-def clean_html_tag(x):
-    bs = BeautifulSoup(x)
-    x = bs.get_text()
-    return x
+def fix_miss_spellings(text):
+    """typoの修正"""
+    corrected_text = []
+    misspelled_words = SpellCheckerInstance.unknown(text.split())
+
+    for word in text.split():
+        if word in misspelled_words:
+            corrected_text.append(SpellCheckerInstance.correction(word))
+        else:
+            corrected_text.append(word)
+
+    return " ".join(corrected_text)
+
+
+def clean_stopwords(text, stop_words=ENG_STOPWORDS):
+    """stopwordの削除"""
+    return " ".join([word for word in str(text).split() if word not in stop_words])
+
+
+def lemmatize(text):
+    """動詞や名詞の活用形の統一"""
+    pos_tagged_text = nltk.pos_tag(text.split())
+    return " ".join([LemmatizerInstance.lemmatize(word, WORDNET_MAP.get(pos[0], wordnet.NOUN))
+                     for word, pos in pos_tagged_text])
 
 
 def text_preprocess(x):
-    x = decontract(x)
     x = clean_html_tag(x)
-    x = clean_text(x)
+    x = clean_url(x)
     x = clean_number(x)
-    return x
-
-
-# when splitting paragraphs
-def remove_stop_words(x, stop_words=ENG_STOPWORDS):
-    x = [word for word in x if word not in stop_words]
+    x = upper_to_lower(x)
+    x = clean_contractions(x)
+    x = clean_punctuation(x)
+    # x = clean_special_chars(x)
+    x = clean_stopwords(x)
+    x = fix_miss_spellings(x)
+    # x = lemmatize(x)
     return x
 
 # def preprocess(df, text_columns):
