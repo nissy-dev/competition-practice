@@ -34,8 +34,9 @@
 
 ### 反省
 
-- Bert はモデルを工夫しても精度はあまり上がらない
-  - 論文でもそうらしい...
+- **Bert はモデルを工夫しても精度はあまり上がらなかった**
+  - そういう報告もある...
+  - https://web.stanford.edu/class/cs224n/reports/custom/15785631.pdf
 - どの検証ももう少し丁寧にやるとよかった
   - Post Process についても各カラムについてやってみる
   - やっぱりカラムごとの調査が不足していた
@@ -46,13 +47,13 @@
 https://www.kaggle.com/theoviel/improve-your-score-with-some-text-preprocessing  
 https://www.kaggle.com/sudalairajkumar/getting-started-with-text-preprocessing
 
-1. HTML の除去
-2. URL の除去
-3. 数字の除去 (基本的に数字は役に立たないことが多いので省く)
-4. 大文字を小文字へ (embedding 側も同じ変換をしてあげる)
-5. 短縮系への変換
-6. 特殊文字を消す (もしくは変換する)
-7. スペルミスの変換
+1. **HTML の除去**
+2. **URL の除去**
+3. **数字の除去** (基本的に数字は役に立たないことが多いので省く)
+4. **大文字を小文字へ** (embedding 側も同じ変換をしてあげる)
+5. **短縮系への変換**
+6. **特殊文字を消す** (もしくは変換する)
+7. **スペルミスの変換**
 
 以下はタスクによって考える  
 特に、文章の分散表現を得る場合はやらないことが多かった (文が不自然になるから...?)
@@ -74,12 +75,12 @@ https://www.kaggle.com/sudalairajkumar/getting-started-with-text-preprocessing
 基礎は単語の出現回数によってベクトル化する手法。表現力にはかなり限界がある。  
 **またかなり次元が大きくなるので、Kaggle などでは SVD などで次元圧縮する人が多い**
 
-- Bag of Words (BOW)
+- **Bag of Words (BOW)**
   - 一番基礎
   - 形態素解析と呼ばれる処理で単語単位に分割を行い、文章毎に各単語が何回出現したかを数え上げ
   - 長さが語彙数となるベクトル
   - 化学で言う部分構造数え上げみたいなもの
-- TF-IDF
+- **TF-IDF**
   - ここら辺から実際使われる
   - TF と IDF の積
   - TF：ある単語(t)がある文書(d)中で何回出現したか
@@ -90,7 +91,7 @@ https://www.kaggle.com/sudalairajkumar/getting-started-with-text-preprocessing
 数え上げだけではなく、ここからは単語の持つ意味的な情報を用いる手法が出てくる。  
 単語の分散表現の取得。**基本的には、fasttext で良い気がする。**
 
-- Word2Vec
+- **Word2Vec**
   - CBOW, Skip-gram の 2 つのアーキテクチャが存在
   - 学習した重みを単語の分散表現として利用
   - Skip-gram：https://qiita.com/Hironsan/items/11b388575a058dc8a46a
@@ -99,7 +100,7 @@ https://www.kaggle.com/sudalairajkumar/getting-started-with-text-preprocessing
   - よく使われる学習済みモデル
     - Google の学習済みモデル (20 分くらい読み込みに時間がかかるらしい...)
     - https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz
-- fasttext
+- **fasttext**
   - Word2Vec の進化版 (精度も良い)
   - 「活用形」をまとめられるようなモデル
   - facebook が開発し、word2vec より高速な学習が可能
@@ -110,18 +111,18 @@ https://www.kaggle.com/sudalairajkumar/getting-started-with-text-preprocessing
 
 基本的には以下の 4 つが順当な予感。SWEM が一番楽だし、ベースラインとして利用できそう。
 
-- Word2Vec(fasttext) と TF-IDF
+- **Word2Vec(fasttext) と TF-IDF**
   - TF-IDF を重みとする単語ベクトルの加重平均
   - https://qiita.com/hrappuccino/items/19bcdc097246865bea86
-- Doc2Vec
+- **Doc2Vec**
   - 名前の通り、Word2Vec を文書に応用したもの
-- SCDV
+- **SCDV**
   - Doc2Vec などよりかなりいい表現らしい
   - 1 から実装する必要がある...
-- SWEM
+- **SWEM**
   - Word2Vec(fasttext)の平均値や最大値などを使う方法
   - https://yag-ays.github.io/project/swem/
-- Universal Sentence Encoder
+- **Universal Sentence Encoder**
   - 文章をベクトルへ直す手法のデファクトになりつつある
   - 簡単に試すことができ、多言語も解釈できる
   - https://qiita.com/kenta1984/items/9613da23766a2578a27a
