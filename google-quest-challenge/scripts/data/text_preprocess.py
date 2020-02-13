@@ -18,12 +18,12 @@ LemmatizerInstance = WordNetLemmatizer()
 
 
 def clean_html_tag(text):
-    """HTMLの除去"""
+    """HTMLの削除"""
     return BeautifulSoup(text, "lxml").text
 
 
 def clean_url(text):
-    """URLの修正"""
+    """URLの削除"""
     url_pattern = re.compile(r'https?://\S+|www\.\S+')
     return url_pattern.sub(r'', text)
 
