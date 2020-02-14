@@ -71,8 +71,7 @@ def main():
 
         # train adn predict
         for i, classifier in enumerate(first_layer_classifiers):
-            start_idx = i * 6
-            end_idx = start_idx + 6
+            start_idx, end_idx = i * num_class, (i+1) * num_class
             classifier.train(x_trn, y_trn)
             second_layer_inputs[valid_index, start_idx:end_idx] = classifier.predict(x_val)
 
@@ -82,8 +81,7 @@ def main():
     print('Creating test_inputs ....')
     test_inputs = np.zeros((len(X_test), num_class * len(first_layer_classifiers)))
     for i, classifier in enumerate(first_layer_classifiers):
-        start_idx = i * 6
-        end_idx = start_idx + 6
+        start_idx, end_idx = i * num_class, (i+1) * num_class
         # 全データで学習
         classifier.train(X_train, y_train)
         test_inputs[:, start_idx:end_idx] = classifier.predict(X_test)
