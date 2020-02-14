@@ -24,6 +24,7 @@ def main():
     DATA_DIR = args.data_path
     num_folds = args.fold
     num_class = 6
+    seed = 1234
 
     # log directory
     time = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -59,7 +60,7 @@ def main():
     # 1st layer
     print('Creating second_layer_inputs and test_inputs ....')
     # hold out
-    x_trn, x_val, y_trn, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=1234)
+    x_trn, x_val, y_trn, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=seed)
     second_layer_inputs = np.zeros((len(x_val), num_class * len(first_layer_classifiers)))
     test_inputs = np.zeros((len(X_test), num_class * len(first_layer_classifiers)))
     # train adn predict
@@ -75,25 +76,24 @@ def main():
     print(test_inputs[0:3])
 
     # 2nd layer
-    valid_preds = np.zeros((len(X_train), 6))
+    valid_preds = np.zeros((len(second_layer_inputs), 6))
     test_preds = np.zeros((num_folds, len(X_test), 6))
     all_score = []
     score_df = pd.DataFrame()
-    kf = KFold(shuffle=True, random_state=1234)
+    kf = KFold(shuffle=True, random_state=seed)
     for fold, (train_index, valid_index) in enumerate(kf.split(second_layer_inputs)):
         str_fold = 'fold_{}'.format(fold + 1)
         print(str_fold)
 
         # set data
         x_trn, x_val = second_layer_inputs[train_index], second_layer_inputs[valid_index]
-        y_trn, y_val = y_train.iloc[train_index], y_train.iloc[valid_index]
-        second_layer_classifiers.train(x_trn, y_trn, x_val, y_val)
-        second_layer_classifiers.predict(x_val)
+        y_2nd_trn, y_2nd_val = y_val.iloc[train_index], y_val.iloc[valid_index]
+        second_layer_classifiers.train(x_trn, y_2nd_trn, x_val, y_2nd_val)
         valid_preds[valid_index] = second_layer_classifiers.predict(x_val)
         test_preds[fold] = second_layer_classifiers.predict(test_inputs)
 
         # scoring
-        score = accuracy_score(y_val, np.argmax(valid_preds[valid_index], axis=1))
+        score = accuracy_score(y_2nd_val, np.argmax(valid_preds[valid_index], axis=1))
         print('Fold {} Score : {}'.format(fold+1, score))
         all_score.append(score)
 
