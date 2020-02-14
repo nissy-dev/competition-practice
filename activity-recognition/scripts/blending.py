@@ -20,7 +20,7 @@ def parse_arguments():
 
 def main():
     args = parse_arguments()
-    # create save path
+    # params
     DATA_DIR = args.data_path
     num_folds = args.fold
     num_class = 6
