@@ -83,7 +83,6 @@ def main():
         # init models
         model = CustomBertForSequenceClassification.from_pretrained(
             bert_model, num_labels=num_labels, output_hidden_states=True)
-        model = model.to(device)
         criterion = nn.BCEWithLogitsLoss()
         optimizer = AdamW(model.parameters(), lr=2e-5, eps=1e-8)
         scheduler = get_linear_schedule_with_warmup(
@@ -94,10 +93,11 @@ def main():
         runner = BertRunner(device=device)
         loaders = {'train': train_loader, 'valid': valid_loader}
         print("Model Training....")
-        runner.train(model=model, criterion=criterion, optimizer=optimizer,
-                     scheduler=scheduler, loaders=loaders, logdir=logdir, num_epochs=num_epochs)
+        runner.train(model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler,
+                     loaders=loaders, logdir=logdir, num_epochs=num_epochs,
+                     score_func=mean_spearmanr_correlation_score)
 
-        # calculate valid score
+        # calc valid score
         best_model_path = os.path.join(logdir, 'best_model.pth')
         val_preds = runner.predict_loader(model, loaders['valid'], resume=best_model_path)
         val_truth = train[target_cols].iloc[valid_idx].values

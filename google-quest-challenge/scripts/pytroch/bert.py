@@ -8,16 +8,14 @@ from tqdm import tqdm
 from math import floor, ceil
 from transformers import BertModel, BertPreTrainedModel
 
-from scripts.utils.metrics import mean_spearmanr_correlation_score
-
 
 def compute_input_arrays(df, columns, tokenizer, max_sequence_length,
-                         t_max_len=30, q_max_len=239, a_max_len=239):
+                         t_max_len=30, q_max_len=239, a_max_len=239, head_tail=True):
     input_ids, input_masks, input_segments = [], [], []
     for _, instance in df[columns].iterrows():
         # TODO: you will customize this stoken on each competition
         t, q, a = instance.question_title, instance.question_body, instance.answer
-        t, q, a = _trim_input(t, q, a, tokenizer, max_sequence_length, t_max_len, q_max_len, a_max_len)
+        t, q, a = _trim_input(t, q, a, tokenizer, max_sequence_length, t_max_len, q_max_len, a_max_len, head_tail)
         stoken = ["[CLS]"] + t + ["[SEP]"] + q + ["[SEP]"] + a + ["[SEP]"]
         ids, masks, segments = _convert_to_bert_inputs(stoken, tokenizer, max_sequence_length)
         input_ids.append(ids)
@@ -89,7 +87,7 @@ class CustomBertForSequenceClassification(BertPreTrainedModel):
             inputs_embeds=inputs_embeds,
         )
 
-        # 4層分のCLSの出力を使う方法で実装する
+        # TODO: 4層分のCLSの出力を使う方法で実装する
         # outputs[0]を平均とかでPoolするの一般的 (GlobalAveragePoolingを使っていた)
         # outputs[0] : all output of last layer
         # outputs[1] : [CLS] output of last layer
@@ -109,10 +107,13 @@ class BertRunner:
     def __init__(self, device='cpu'):
         self.device = device
 
-    def train(self, model, criterion, optimizer, loaders, scheduler=None, logdir=None, num_epochs=5):
+    def train(self, model, criterion, optimizer, loaders, scheduler=None, logdir=None,
+              num_epochs=5, score_func=None):
+        model = model.to(self.device)
         train_loader = loaders['train']
         valid_loader = loaders['valid']
         best_score = -1.0
+        best_avg_val_loss = 100
         for epoch in range(num_epochs):
             start_time = time.time()
             # release memory
@@ -121,7 +122,7 @@ class BertRunner:
             # train for one epoch
             avg_loss = self._train_model(model, criterion, optimizer, train_loader, scheduler)
             # evaluate on validation set
-            avg_val_loss, score = self._validate_model(model, criterion, valid_loader)
+            avg_val_loss, score = self._validate_model(model, criterion, valid_loader, score_func)
 
             # log
             elapsed_time = time.time() - start_time
@@ -129,18 +130,27 @@ class BertRunner:
                 epoch + 1, num_epochs, avg_loss, avg_val_loss, score, elapsed_time))
 
             # save best params
-            if best_score < score:
-                best_score = score
-                best_param_score = model.state_dict()
-                save_path = 'best_model.pth'
-                if logdir is not None:
-                    save_path = os.path.join(logdir, save_path)
-                torch.save(best_param_score, save_path)
-                print('Save the best model on Epoch {}'.format(epoch + 1))
+            save_path = 'best_model.pth'
+            if logdir is not None:
+                save_path = os.path.join(logdir, save_path)
+
+            if score is None:
+                if best_avg_val_loss > avg_val_loss:
+                    best_avg_val_loss = avg_val_loss
+                    best_param_loss = model.state_dict()
+                    torch.save(best_param_loss, save_path)
+                    print('Save the best model on Epoch {}'.format(epoch + 1))
+            else:
+                if best_score < score:
+                    best_score = score
+                    best_param_score = model.state_dict()
+                    torch.save(best_param_score, save_path)
+                    print('Save the best model on Epoch {}'.format(epoch + 1))
 
         return True
 
     def predict_loader(self, model, loader, resume='best_model.pth'):
+        model = model.to(self.device)
         # load best model
         model.load_state_dict(torch.load(resume))
         model.eval()
@@ -204,7 +214,7 @@ class BertRunner:
 
         return avg_loss
 
-    def _validate_model(self, model, criterion, valid_loader):
+    def _validate_model(self, model, criterion, valid_loader, score_func=None):
         # switch to eval mode
         model.eval()
         avg_val_loss = 0.
@@ -232,11 +242,14 @@ class BertRunner:
                 valid_preds.extend(logits.detach().cpu().squeeze().numpy())
                 original.extend(labels.detach().cpu().squeeze().numpy())
 
-            valid_preds = np.array(valid_preds)
-            original = np.array(original)
-            # TODO : you should write valid score calculation
-            preds = torch.sigmoid(torch.tensor(valid_preds)).numpy()
-            score = mean_spearmanr_correlation_score(original, preds)
+            score = None
+            if score_func is not None:
+                # TODO : you should write valid score calculation
+                # In this case, we pass sigmoid function
+                valid_preds = np.array(valid_preds)
+                original = np.array(original)
+                preds = torch.sigmoid(torch.tensor(valid_preds)).numpy()
+                score = score_func(original, preds)
 
         return avg_val_loss, score
 

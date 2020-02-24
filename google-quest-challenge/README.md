@@ -52,6 +52,12 @@
   - カラム別にモデルを作る人も多かった
     - これは時間がもう少し必要...
     - やっぱり 1 ヶ月前からは参加する必要あり
+- 特徴量エンジニアリングのまとめ
+  - https://qiita.com/squash/items/667f8cda16c76448b0f4
+  - 特に良いやつ : https://www.slideshare.net/mlm_kansai/kaggle-138546659
+- OptimizedRounder
+  - https://qiita.com/kaggle_master-arai-san/items/d59b2fb7142ec7e270a5#optimizedrounder
+  - 引数良く分からないケースが多いので、聞ける人がいたら聞く
 - リンク
   - https://yukoishizaki.hatenablog.com/entry/2020/02/11/090908
   - https://www.ai-shift.jp/techblog/635
