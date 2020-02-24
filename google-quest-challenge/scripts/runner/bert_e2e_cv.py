@@ -20,7 +20,7 @@ def main():
     # TODO: set your params
     num_folds = 5
     seed = 1234
-    base_dataset_path = '/content/drive/My Drive/kaggle/google-quest-challenge/dataset/'
+    base_dataset_path = '/content/drive/My Drive/kaggle/google-quest-challenge/dataset'
     batch_size = 4
     num_epochs = 4
     bert_model = 'bert-base-uncased'
