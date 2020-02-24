@@ -21,8 +21,7 @@ def count_encoding(train, test, col):
     keys = count_dict.keys()
     label_count_dict = {key: i for i, key in enumerate(keys, start=1)}
     train['cnt_enc_' + col] = train[col].map(lambda x: label_count_dict[x]).values
-    test['cnt_enc_' + col] = test[col].map(
-        lambda x: label_count_dict[x] if x in keys else 0).values
+    test['cnt_enc_' + col] = test[col].map(lambda x: label_count_dict[x] if x in keys else 0).values
     return train, test
 
 

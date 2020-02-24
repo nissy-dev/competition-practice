@@ -13,8 +13,10 @@
   - 出力層に近い層での Dense 層を増やした
   - 全データ学習
   - custom loss
+    - 多ラベル分類は BCE を使う (今回のケースは多ラベル多クラス分類)
+      - https://qiita.com/koshian2/items/ab5e0c68a257585d7c6f
     - focal loss (不均衡データに対する損失)
-      - Twitter でもあまりうまくいくケースないみたいな話
+      - Twitter でもあまりうまくいくケースがないみたいな話をみた
   - multi task モデル
   - カテゴリを Embedding して、Concat
 - 出力の rank average ensemble
@@ -36,10 +38,24 @@
 
 - **Bert はモデルを工夫しても精度はあまり上がらなかった**
   - そういう報告もある...
-  - https://web.stanford.edu/class/cs224n/reports/custom/15785631.pdf
+    - https://web.stanford.edu/class/cs224n/reports/custom/15785631.pdf
+  - Bert や Transformer のカスタマイズは難しいらしい...
 - どの検証ももう少し丁寧にやるとよかった
-  - Post Process についても各カラムについてやってみる
-  - やっぱりカラムごとの調査が不足していた
+  - Post Process についても各カラムについてやる
+  - Bert のカスタマイズについては、順序立ててやる
+- 上位陣の解法
+  - Post Process がポイントだった
+    - これをするだけで、銅メダルは行けた... (わかってはいたのに...)
+    - Bert のカスタマイズはあまりうまくいってない人がほとんど
+  - あとは、やはり異なる種類のモデルでアンサンブルしている人が強い
+    - Distillbert や USE の Embedding を LSTM に突っ込むモデルが人気だった
+  - カラム別にモデルを作る人も多かった
+    - これは時間がもう少し必要...
+    - やっぱり 1 ヶ月前からは参加する必要あり
+- リンク
+  - https://yukoishizaki.hatenablog.com/entry/2020/02/11/090908
+  - https://www.ai-shift.jp/techblog/635
+  - https://www.kaggle.com/c/google-quest-challenge/discussion/129927
 
 ## 文章の前処理 (英語、分割前)
 
@@ -131,16 +147,30 @@ https://www.kaggle.com/sudalairajkumar/getting-started-with-text-preprocessing
 https://qiita.com/nekoumei/items/1f5ec09e422a4be99810  
 http://www.ie110704.net/2018/10/12/%E6%96%87%E6%9B%B8%E5%88%86%E6%95%A3%E8%A1%A8%E7%8F%BEscdv%E3%81%A8%E4%BB%96%E3%81%AE%E5%88%86%E6%95%A3%E8%A1%A8%E7%8F%BE%E3%82%92%E6%AF%94%E8%BC%83%E3%81%97%E3%81%A6%E3%81%BF%E3%81%9F/
 
-## Bert (WIP)
+## Bert
 
-解説：https://qiita.com/Kosuke-Szk/items/4b74b5cce84f423b7125  
-Bert 入門 : https://www.slideshare.net/matsukenbook/bert-217710964
+Bert 入門記事  
+https://qiita.com/Kosuke-Szk/items/4b74b5cce84f423b7125  
+https://www.slideshare.net/matsukenbook/bert-217710964  
+https://www.ogis-ri.co.jp/otc/hiroba/technical/similar-document-search/part3.html
 
-- 双方向に Connect された Transformer モデル
-- 今までの次の単語を予測するタスクではなく、穴埋めのタスクを解くことで双方向の結合を実現
-- 穴埋めタスクなので、Encoder のみ
-- Transformer とは..?
-  - 文書生成タスクを解く
-  - 文書識別なら Decoder は不要
-  - Decoder では、0-t の文字列を入力として、1-t+1 の文字列を得る
-  - Recurrent は不要なモデル → 文章の順番は Embeding して Vector として担保しているらしい
+- モデル
+  - 双方向 Transformer とよく言われる
+  - Transformer について : http://deeplearning.hatenablog.com/entry/transformer
+- 学習方法
+  - データは大規模コーパス (Wikipedia)
+  - 教師なし学習で事前学習
+    - 文の単語の穴埋めタスクと文が連続するかを予測するタスク
+  - 各タスクで Fine Tuning
+    - 各タスクのモデルも少しづつ異なる
+    - Q&A のタスクだと入力の最後の数単語の Embedding を使う
+    - ほとんどのタスクで SOTA
+    - 論文参照 : https://arxiv.org/pdf/1810.04805.
+- 自分で FineTune するとき
+  - 前処理はあんまり必要ではない
+    - html タグ除くくらいで十分だと思う
+  - 主に、入力の作り方とモデルの構造の 2 つのポイントで改良できる
+    - モデルの方はあんまり精度に影響は与えないかも...
+
+実装は、huggingface/transformers を使う  
+https://github.com/huggingface/transformers

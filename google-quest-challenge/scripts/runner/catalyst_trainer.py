@@ -23,11 +23,10 @@ def yaml_to_json(path_to_yaml):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Test')
-    # for dataset path
-    parser.add_argument('--feat-path', default='dataset/feature/result/energy/feature.h5',
-                        type=str, help='path to feature (relative path)')
-    return parser
+    parser = argparse.ArgumentParser(description='Catalyst Sample Trainer')
+    parser.add_argument('--yaml-path', default='config.yaml',
+                        type=str, help='path to config (relative path)')
+    return parser.parse_args()
 
 
 def main(train, test, features, target):
@@ -64,10 +63,10 @@ def main(train, test, features, target):
 
     # load dataset
     if preprocessed_data_path == '':
-        train, test, sample_submission = read_data(base_path)
+        train, test, sample_submission = read_data(base_path)  # noqa
         # TODO: You should implement these function!!
-        train, test = preprocess(train, test)
-        train, test = build_feature(train, test)
+        train, test = preprocess(train, test)  # noqa
+        train, test = build_feature(train, test)  # noqa
     else:
         train = pd.read_csv(preprocessed_data_path + 'train.csv')
         test = pd.read_csv(preprocessed_data_path + 'test.csv')
@@ -101,13 +100,13 @@ def main(train, test, features, target):
         # init models
         # TODO: set your model and learning condition
         # ここは関数を用意して、キーワードで取り出すようにできると汎用性は上がる
-        model = SampleNN(input_dim=1000, out_dim=1).to(device)
+        model = SampleNN(input_dim=1000, out_dim=1)
         criterion = nn.BCELoss()
         optimizer = torch.optim.AdamW(model.parameters())
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
 
         # init catalyst runner
-        runner = SupervisedRunner()
+        runner = SupervisedRunner(device=device)
         # model training
         runner.train(model=model, criterion=criterion, optimizer=optimizer,
                      scheduler=scheduler, loaders=train_dls, logdir=logdir, num_epochs=num_epochs,
