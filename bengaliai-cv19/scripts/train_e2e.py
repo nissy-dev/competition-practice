@@ -13,7 +13,7 @@ from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from dataset import BengaliAIDataset
 from read_data import read_data, prepare_image
 from custom_loss import baseline_loss
-from model import BengaliAIClassifier
+from model import BengaliBaselineClassifier
 
 
 def main():
@@ -83,7 +83,7 @@ def main():
         torch.cuda.empty_cache()
 
         # init models
-        model = BengaliAIClassifier(pretrained='imagenet')
+        model = BengaliBaselineClassifier(pretrained='imagenet')
         model = model.to(device)
         criterion = baseline_loss()
         optimizer = Adam(model.parameters(), lr=LR)

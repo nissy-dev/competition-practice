@@ -48,11 +48,11 @@ class LinearBlock(nn.Module):
         return out
 
 
-class BengaliAIClassifier(nn.Module):
+class BengaliBaselineClassifier(nn.Module):
     def __init__(self, n_grapheme=168, n_vowel=11, n_consonant=7,
                  model_name='se_resnext101_32x4d', in_channels=3,
                  hdim=1048, use_bn=True, pretrained=None):
-        super(BengaliAIClassifier, self).__init__()
+        super(BengaliBaselineClassifier, self).__init__()
         self.n_grapheme = n_grapheme
         self.n_vowel = n_vowel
         self.n_consonant = n_consonant
