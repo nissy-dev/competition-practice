@@ -4,30 +4,27 @@
 
 - まずはベースラインを作ることに徹する
   - シングルモデルでスコアを向上させることに徹したい
-  - ResNet ベースでもなんとかなる
-  - serene xt50 or efficientnet b0
-  - 問題はどうやって、imbalance や misslabeling に対処するか
+  - 問題はどうやって、imbalance や misslabeling に対処するか...?
     - データの意味も理解できていないので、ベースができたら理解する
-  - まず画像をを全て pickle object に直すところからか...?
 
 ## 疑問点
 
 - 画像について
-  - 137x236 to 224x224 using F.interpolate() at the input らしい
+  - 224x224 の方が精度は良さそう
   - 3 channel にする
     - imagenet の重みを使うと入力が 3channel しか受け付けないからだった
-  - Resize も文字が中心になるように変換すべき
+  - Resize の際には、文字が中心になるように変換すべき (こういう細かな配慮は大事)
 - モデルは...?
-  - efficient-net
   - Densenet121
   - se_resnext50_32x4d
 - Optmizer は..?
-  - Adam with reducelronplateau で 40 epoch でもそこそこ出るっぽい
+  - Adam with ReduceLROnPlateau
 - Augment は...?
-  - cutout (baseline)
-  - cutmix = cutout + mixup
+  - baseline: ShiftScaleRotate + CutOut
+  - CutMix (= cutout + mixup9, AugMix も試す
 - CV は...?
   - MultilabelStratifiedKFold を使うで良い気がする
+  - hold out で良いか...
 - 細かいところは以下を参照するのが良い
   - 下手に Discussion を見るよりは、ここのやつを参考にするのが良い
   - https://www.kaggle.com/c/bengaliai-cv19/discussion/12797
