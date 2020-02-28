@@ -2,26 +2,29 @@ import os
 import gc
 import torch
 import albumentations as albu
-from albumentations import pytorch as AT
 from torch.utils.data import DataLoader
 from torch.optim import Adam, lr_scheduler
 from catalyst.utils import get_device, set_global_seed
 from catalyst.dl import SupervisedRunner
-# from catalyst.dl.callbacks import AccuracyCallback
+from catalyst.dl.callbacks import EarlyStoppingCallback
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 
 from dataset import BengaliAIDataset
 from read_data import read_data, prepare_image
-from custom_loss import baseline_loss
+from custom_loss import BaselineLoss
 from model import BengaliBaselineClassifier
+from se_resnext50_32x4d_for_offline import se_resnext50_32x4d
+from metrics import MacroRecallCallback
 
 
 def main():
     # set your params
-    DATA_PATH = ''
+    DATA_PATH = '/content/drive/My Drive/kaggle/bengaliai-cv19/dataset'
+    MODEL_PATH = '/content/drive/My Drive/kaggle/bengaliai-cv19/model/se_resnext50_32x4d-a260b3a4.pth'
+    # MODEL_PATH='/content/drive/My Drive/kaggle/bengaliai-cv19/model/efficientnet-b3-5fb5a3c3.pth'
+    BASE_LOGDIR = '/content/drive/My Drive/kaggle/bengaliai-cv19/logs'
     NUM_FOLDS = 5
-    BASE_LOGDIR = ''
-    BATCH_SIZE = 128
+    BATCH_SIZE = 64
     EPOCHS = 10
     SEED = 1234
     SIZE = 224
@@ -40,11 +43,8 @@ def main():
     train_data_transforms = albu.Compose([
         albu.ShiftScaleRotate(rotate_limit=10, scale_limit=.1),
         albu.Cutout(p=0.5),
-        AT.ToTensor()
     ])
-    test_data_transforms = albu.Compose([
-        AT.ToTensor()
-    ])
+    test_data_transforms = None
 
     # create train dataset
     kf = MultilabelStratifiedKFold(n_splits=NUM_FOLDS, random_state=SEED)
@@ -71,10 +71,8 @@ def main():
         )
 
         print("Preparing dataloaders datasets....")
-        train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                  num_workers=4, pin_memory=True)
-        valid_loader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, shuffle=False,
-                                  num_workers=4, pin_memory=True)
+        train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+        valid_loader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, shuffle=False)
         loaders = {'train': train_loader, 'valid': valid_loader}
 
         # release memory
@@ -83,18 +81,23 @@ def main():
         torch.cuda.empty_cache()
 
         # init models
-        model = BengaliBaselineClassifier(pretrained='imagenet')
+        model = BengaliBaselineClassifier(pretrainedmodels=se_resnext50_32x4d(model_path=MODEL_PATH))
+        # model = CustomEfficientNet.from_pretrained('efficientnet-b3', MODEL_PATH)
         model = model.to(device)
-        criterion = baseline_loss()
+        criterion = BaselineLoss()
         optimizer = Adam(model.parameters(), lr=LR)
         scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience=5)
-        callbacks = []
+        callbacks = [
+            MacroRecallCallback(),
+            EarlyStoppingCallback(patience=10)
+        ]
 
         # catalyst trainer
-        runner = SupervisedRunner()
+        runner = SupervisedRunner(device=device)
         # model training
         runner.train(model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler,
-                     loaders=loaders, callbacks=callbacks, logdir=logdir, num_epochs=EPOCHS, verbose=True)
+                     loaders=loaders, callbacks=callbacks, logdir=logdir, num_epochs=EPOCHS,
+                     fp16=True, verbose=True)
 
     return True
 

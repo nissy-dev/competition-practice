@@ -39,6 +39,6 @@ def check_all_file(save_dir=DATA_PATH + 'train_img_npy'):
     for i in range(NUM_ALL_FILE):
         file_name = 'Train_{}.npy'.format(i)
         path = os.path.join(save_dir, file_name)
-        if os.path.isfile(path) == False:
+        if os.path.isfile(path) is False:
             raise ValueError('File {} not found...'.format(file_name))
     return True

@@ -33,3 +33,16 @@
   - https://www.kaggle.com/c/rsna-intracranial-hemorrhage-detection/discussion/117210
   - https://www.kaggle.com/c/understanding_cloud_organization/discussion/118080
   - https://www.kaggle.com/c/recursion-cellular-image-classification/discussion/110543
+
+# 実験
+## 1周目
+
+- モデル
+  - 学習が遅すぎる...
+    1 epoch 40 min scoreも監視する
+  - Efficienet-b4とかでも良いかも
+- モデルの構造
+  - Targetを分ける
+- lossの自作
+  - OHEMが気になる
+  - 不均衡データに対するloss

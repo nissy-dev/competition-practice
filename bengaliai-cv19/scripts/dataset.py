@@ -1,6 +1,7 @@
 import cv2
 import torch
 import numpy as np
+from PIL import Image
 from torch.utils.data import Dataset
 
 
@@ -17,7 +18,6 @@ def bbox(img):
     return rmin, rmax, cmin, cmax
 
 
-# ただの
 # https://www.kaggle.com/iafoss/image-preprocessing-128x128
 def crop_resize(img, size=SIZE, pad=16):
     # crop a box around pixels large than the threshold
@@ -59,11 +59,12 @@ class BengaliAIDataset(Dataset):
         if self.size is not None:
             img = crop_resize(img, self.size)
         # convert 3 channels
-        img = cv2.cvtColor(img, cv2.CV_GRAY2BGR)
+        img = Image.fromarray(img).convert("RGB")
         if self.transforms is not None:
-            augmented = self.transforms(image=img)
+            augmented = self.transforms(image=np.array(img))
             img = augmented['image']
-        return torch.tensor(img), torch.tensor(label)
+            img = np.transpose(img, (2, 0, 1)).astype(np.float32)
+        return torch.tensor(img, dtype=torch.float), torch.tensor(label, dtype=torch.long)
 
     def __len__(self):
         return len(self.images)
