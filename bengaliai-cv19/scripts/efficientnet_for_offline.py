@@ -30,6 +30,23 @@ GlobalParams.__new__.__defaults__ = (None,) * len(GlobalParams._fields)
 BlockArgs.__new__.__defaults__ = (None,) * len(BlockArgs._fields)
 
 
+IMAGE_RGB_MEAN = [0.485, 0.456, 0.406]
+IMAGE_RGB_STD = [0.229, 0.224, 0.225]
+
+
+class RGB(nn.Module):
+    def __init__(self, mean=IMAGE_RGB_MEAN, std=IMAGE_RGB_STD):
+        super(RGB, self).__init__()
+        self.register_buffer('mean', torch.zeros(1, 3, 1, 1))
+        self.register_buffer('std', torch.ones(1, 3, 1, 1))
+        self.mean.data = torch.FloatTensor(mean).view(self.mean.shape)
+        self.std.data = torch.FloatTensor(std).view(self.std.shape)
+
+    def forward(self, x):
+        x = (x - self.mean) / self.std
+        return x
+
+
 class SwishImplementation(torch.autograd.Function):
     @staticmethod
     def forward(ctx, i):
@@ -287,25 +304,15 @@ def get_model_params(model_name, override_params):
 
 # This below function is modified to use the pretrained weight for single channel.
 # Its nothing but summing the weight across one axis .
-def load_pretrained_weights(model, model_name, model_path, load_fc=True, ch=1):
+def load_pretrained_weights(model, model_name, model_path):
     """ Loads pretrained weights, and downloads if loading for the first time. """
-    state_dict = torch.load(model_path)
-    if load_fc:
-        if ch == 1:
-            conv1_weight = state_dict['_conv_stem.weight']
-            state_dict['_conv_stem.weight'] = conv1_weight.sum(dim=1, keepdim=True)
-        model.load_state_dict(state_dict)
+    # load imagenet weight
+    pretrain_state_dict = torch.load(model_path)
+    state_dict = model.state_dict()
+    for key in pretrain_state_dict.keys():
+        state_dict[key] = pretrain_state_dict[key]
+    model.load_state_dict(state_dict)
 
-    else:
-        state_dict.pop('_fc.weight')
-        state_dict.pop('_fc.bias')
-        if ch == 1:
-            conv1_weight = state_dict['_conv_stem.weight']
-            state_dict['_conv_stem.weight'] = conv1_weight.sum(dim=1, keepdim=True)
-        res = model.load_state_dict(state_dict, strict=False)
-        print(res.missing_keys)
-        assert set(res.missing_keys) == set(['_fc.weight', '_fc.bias', 'fc1.weight', 'fc1.bias',
-                                             'fc2.weight', 'fc2.bias', 'fc3.weight', 'fc3.bias']), 'issue loading pretrained weights'
     print('Loaded pretrained weights for {}'.format(model_name))
 
 
@@ -401,7 +408,7 @@ class CustomEfficientNet(nn.Module):
         model = EfficientNet.from_pretrained('efficientnet-b0')
     """
 
-    def __init__(self, blocks_args=None, global_params=None, n_grapheme=168, n_vowel=11, n_consonant=7):
+    def __init__(self, blocks_args=None, global_params=None, in_channels=3, n_grapheme=168, n_vowel=11, n_consonant=7):
         super().__init__()
         assert isinstance(blocks_args, list), 'blocks_args should be a list'
         assert len(blocks_args) > 0, 'block args must be greater than 0'
@@ -416,7 +423,6 @@ class CustomEfficientNet(nn.Module):
         bn_eps = self._global_params.batch_norm_epsilon
 
         # Stem
-        in_channels = 1  # rgb
         out_channels = round_filters(32, self._global_params)  # number of output channels
         self._conv_stem = Conv2d(in_channels, out_channels, kernel_size=3, stride=2, bias=False)
         self._bn0 = nn.BatchNorm2d(num_features=out_channels, momentum=bn_mom, eps=bn_eps)
@@ -451,6 +457,8 @@ class CustomEfficientNet(nn.Module):
         self._fc = nn.Linear(out_channels, self._global_params.num_classes)
         self._swish = MemoryEfficientSwish()
 
+        # start layer
+        self.rgb = RGB()
         # target_col = ['grapheme_root', 'consonant_diacritic', 'vowel_diacritic']
         # grapheme_root
         self.logits_for_grapheme = nn.Linear(out_channels, n_grapheme)
@@ -486,8 +494,10 @@ class CustomEfficientNet(nn.Module):
     def forward(self, inputs):
         """ Calls extract_features to extract features, applies final linear layer, and returns logits. """
         bs = inputs.size(0)
+        # TODO: In case, use imagenet weight
+        x = self.rgb(inputs)
         # Convolution layers
-        x = self.extract_features(inputs)
+        x = self.extract_features(x)
         # Pooling and final linear layer
         x = self._avg_pooling(x)
         x = x.view(bs, -1)
@@ -508,7 +518,7 @@ class CustomEfficientNet(nn.Module):
     @classmethod
     def from_pretrained(cls, model_name, model_path, num_classes=1000, in_channels=3):
         model = cls.from_name(model_name, override_params={'num_classes': num_classes})
-        load_pretrained_weights(model, model_name, model_path, load_fc=False)
+        load_pretrained_weights(model, model_name, model_path)
         if in_channels != 3:
             Conv2d = get_same_padding_conv2d(image_size=model._global_params.image_size)
             out_channels = round_filters(32, model._global_params)

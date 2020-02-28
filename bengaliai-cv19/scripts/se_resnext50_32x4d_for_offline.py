@@ -224,6 +224,8 @@ class SENet(nn.Module):
         return nn.Sequential(*layers)
 
     def features(self, x):
+        # TODO: In case, use imagenet weight
+        x = self.rgb(x)
         x = self.layer0(x)
         x = self.layer1(x)
         x = self.layer2(x)
@@ -240,7 +242,6 @@ class SENet(nn.Module):
         return x
 
     def forward(self, x):
-        x = self.rgb(x)
         x = self.features(x)
         x = self.logits(x)
         return x
@@ -254,7 +255,7 @@ def se_resnext50_32x4d(num_classes=1000, model_path=None, pretrained='imagenet')
     if pretrained is not None:
         if model_path is None:
             raise ValueError('you should set model_path!')
-        # load imagenet weight
+        # load imagnet weight
         pretrain_state_dict = torch.load(model_path)
         state_dict = model.state_dict()
         for key in pretrain_state_dict.keys():

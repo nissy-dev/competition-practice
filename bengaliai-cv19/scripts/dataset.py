@@ -60,10 +60,11 @@ class BengaliAIDataset(Dataset):
             img = crop_resize(img, self.size)
         # convert 3 channels
         img = Image.fromarray(img).convert("RGB")
+        img = np.array(img)
         if self.transforms is not None:
-            augmented = self.transforms(image=np.array(img))
+            augmented = self.transforms(image=img)
             img = augmented['image']
-            img = np.transpose(img, (2, 0, 1)).astype(np.float32)
+        img = np.transpose(img, (2, 0, 1)).astype(np.float32)
         return torch.tensor(img, dtype=torch.float), torch.tensor(label, dtype=torch.long)
 
     def __len__(self):
