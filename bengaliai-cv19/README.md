@@ -15,13 +15,18 @@
     - imagenet の重みを使うと入力が 3channel しか受け付けないからだった
   - Resize の際には、文字が中心になるように変換すべき (こういう細かな配慮は大事)
 - モデルは...?
-  - Densenet121
+  - densenet
+  - efficientnet-b3
   - se_resnext50_32x4d
+  - 今の所、学習時間的にも efficientnet が良さそう
+- Loss は...?
+  - Reduced Focal Loss
+  - OHEM
 - Optmizer は..?
   - Adam with ReduceLROnPlateau
 - Augment は...?
   - baseline: ShiftScaleRotate + CutOut
-  - CutMix (= cutout + mixup9, AugMix も試す
+  - CutMix (= cutout + mixup), AugMix も試す
 - CV は...?
   - MultilabelStratifiedKFold を使うで良い気がする
   - hold out で良いか...
@@ -35,14 +40,15 @@
   - https://www.kaggle.com/c/recursion-cellular-image-classification/discussion/110543
 
 # 実験
-## 1周目
+
+## 1 周目
 
 - モデル
   - 学習が遅すぎる...
-    1 epoch 40 min scoreも監視する
-  - Efficienet-b4とかでも良いかも
+    1 epoch 40 min score も監視する
+  - Efficienet-b4 とかでも良いかも
 - モデルの構造
-  - Targetを分ける
-- lossの自作
-  - OHEMが気になる
-  - 不均衡データに対するloss
+  - Target を分ける
+- loss の自作
+  - OHEM が気になる
+  - 不均衡データに対する loss

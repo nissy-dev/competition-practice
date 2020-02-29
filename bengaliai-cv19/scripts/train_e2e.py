@@ -13,8 +13,9 @@ from dataset import BengaliAIDataset
 from read_data import read_data, prepare_image
 from custom_loss import BaselineLoss
 from model import BengaliBaselineClassifier
-from se_resnext50_32x4d_for_offline import se_resnext50_32x4d
 from metrics import MacroRecallCallback
+from offline_models.efficientnet import CustomEfficientNet  # noqa
+from offline_models.se_resnext50_32x4d import se_resnext50_32x4d
 
 
 def main():
@@ -29,6 +30,7 @@ def main():
     SEED = 1234
     SIZE = 224
     LR = 0.003
+    HOLD_OUT = False
 
     # fix seed
     set_global_seed(SEED)
@@ -46,7 +48,7 @@ def main():
     ])
     test_data_transforms = None
 
-    # create train dataset
+    # cross validation
     kf = MultilabelStratifiedKFold(n_splits=NUM_FOLDS, random_state=SEED)
     ids = kf.split(X=train_all_images, y=train[target_col].values)
     # fold_scores = []
@@ -89,7 +91,7 @@ def main():
         scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience=5)
         callbacks = [
             MacroRecallCallback(),
-            EarlyStoppingCallback(patience=10)
+            EarlyStoppingCallback(patience=5)
         ]
 
         # catalyst trainer
@@ -97,7 +99,15 @@ def main():
         # model training
         runner.train(model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler,
                      loaders=loaders, callbacks=callbacks, logdir=logdir, num_epochs=EPOCHS,
-                     fp16=True, verbose=True)
+                     verbose=True)
+
+        # release memory
+        del model, runner, train_loader, valid_loader, loaders
+        gc.collect()
+        torch.cuda.empty_cache()
+
+        if HOLD_OUT is True:
+            break
 
     return True
 
