@@ -1,7 +1,6 @@
 import cv2
 import torch
 import numpy as np
-from PIL import Image
 from torch.utils.data import Dataset
 
 
@@ -59,8 +58,7 @@ class BengaliAIDataset(Dataset):
         if self.size is not None:
             img = crop_resize(img, self.size)
         # convert 3 channels
-        img = Image.fromarray(img).convert("RGB")
-        img = np.array(img)
+        img = np.stack([img, img, img]).transpose(1, 2, 0)
         if self.transforms is not None:
             augmented = self.transforms(image=img)
             img = augmented['image']

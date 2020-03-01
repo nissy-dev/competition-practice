@@ -1,6 +1,7 @@
 import os
 import gc
 import torch
+import pretrainedmodels
 import albumentations as albu
 from torch.utils.data import DataLoader
 from torch.optim import Adam, lr_scheduler
@@ -15,13 +16,13 @@ from custom_loss import BaselineLoss
 from model import BengaliBaselineClassifier
 from metrics import MacroRecallCallback
 from offline_models.efficientnet import CustomEfficientNet  # noqa
-from offline_models.se_resnext50_32x4d import se_resnext50_32x4d
+from offline_models.se_resnext50_32x4d import se_resnext50_32x4d  # noqa
 
 
 def main():
     # set your params
     DATA_PATH = '/content/drive/My Drive/kaggle/bengaliai-cv19/dataset'
-    MODEL_PATH = '/content/drive/My Drive/kaggle/bengaliai-cv19/model/se_resnext50_32x4d-a260b3a4.pth'
+    # MODEL_PATH = '/content/drive/My Drive/kaggle/bengaliai-cv19/model/se_resnext50_32x4d-a260b3a4.pth'
     # MODEL_PATH='/content/drive/My Drive/kaggle/bengaliai-cv19/model/efficientnet-b3-5fb5a3c3.pth'
     BASE_LOGDIR = '/content/drive/My Drive/kaggle/bengaliai-cv19/logs'
     NUM_FOLDS = 5
@@ -83,7 +84,9 @@ def main():
         torch.cuda.empty_cache()
 
         # init models
-        model = BengaliBaselineClassifier(pretrainedmodels=se_resnext50_32x4d(model_path=MODEL_PATH))
+        resnet34 = pretrainedmodels.__dict__["resnet34"](pretrained="imagenet")
+        model = BengaliBaselineClassifier(pretrainedmodels=resnet34, hdim=512)
+        # model = BengaliBaselineClassifier(pretrainedmodels=se_resnext50_32x4d(model_path=MODEL_PATH))
         # model = CustomEfficientNet.from_pretrained('efficientnet-b3', MODEL_PATH)
         model = model.to(device)
         criterion = BaselineLoss()
@@ -99,7 +102,7 @@ def main():
         # model training
         runner.train(model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler,
                      loaders=loaders, callbacks=callbacks, logdir=logdir, num_epochs=EPOCHS,
-                     verbose=True)
+                     main_metric="macro_recall", verbose=True)
 
         # release memory
         del model, runner, train_loader, valid_loader, loaders

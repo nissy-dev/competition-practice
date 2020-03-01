@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.parameter import Parameter
 
 
 # dropout and bn and residualに対応したlinear
@@ -47,6 +48,24 @@ class LinearBlock(nn.Module):
         return out
 
 
+def gem(x, p=3, eps=1e-6):
+    return F.avg_pool2d(x.clamp(min=eps).pow(p), (x.size(-2), x.size(-1))).pow(1./p)
+
+
+class GeM(nn.Module):
+    def __init__(self, p=3, eps=1e-6):
+        super(GeM, self).__init__()
+        self.p = Parameter(torch.ones(1)*p)
+        self.eps = eps
+
+    def forward(self, x):
+        return gem(x, p=self.p, eps=self.eps)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(' + 'p=' + '{:.4f}'.format(self.p.data.tolist()[0]) \
+            + ', ' + 'eps=' + str(self.eps) + ')'
+
+
 class BengaliBaselineClassifier(nn.Module):
     def __init__(self, n_grapheme=168, n_vowel=11, n_consonant=7,
                  pretrainedmodels=None, in_channels=3,
@@ -68,6 +87,38 @@ class BengaliBaselineClassifier(nn.Module):
         h = self.base_model.features(h)
         # sum pool (batch_size × inch)
         h = torch.sum(h, dim=(-1, -2))
+        h = self.fc1(h)
+        logits_for_grapheme = self.logits_for_grapheme(h)
+        logits_for_consonant = self.logits_for_consonant(h)
+        logits_for_vowel = self.logits_for_vowel(h)
+        # target_col = ['grapheme_root', 'consonant_diacritic', 'vowel_diacritic']
+        logits = (logits_for_grapheme, logits_for_consonant, logits_for_vowel)
+        return logits
+
+
+class CustomBengaliBaselineClassifier(nn.Module):
+    def __init__(self, n_grapheme=168, n_vowel=11, n_consonant=7,
+                 pretrainedmodels=None, in_channels=3,
+                 hdim=512, use_bn=True, pretrained=None):
+        super(BengaliBaselineClassifier, self).__init__()
+        self.n_grapheme = n_grapheme
+        self.n_vowel = n_vowel
+        self.n_consonant = n_consonant
+        self.base_model = pretrainedmodels
+        self.conv0 = nn.Conv2d(in_channels, 3, kernel_size=3, stride=1, padding=1, bias=True)
+        inch = self.base_model.last_linear.in_features
+        self.avg_pool = GeM()
+        self.fc1 = LinearBlock(inch, hdim, use_bn=use_bn, activation=F.relu)
+        self.logits_for_grapheme = LinearBlock(hdim, n_grapheme, use_bn=False, activation=None)
+        self.logits_for_vowel = LinearBlock(hdim, n_vowel, use_bn=False, activation=None)
+        self.logits_for_consonant = LinearBlock(hdim, n_consonant, use_bn=False, activation=None)
+
+    def forward(self, x):
+        h = self.conv0(x)
+        h = self.base_model.features(h)
+        # gem pool
+        h = self.avg_pool(h)
+        h = h.view(h.size(0), -1)
         h = self.fc1(h)
         logits_for_grapheme = self.logits_for_grapheme(h)
         logits_for_consonant = self.logits_for_consonant(h)

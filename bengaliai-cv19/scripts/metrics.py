@@ -4,7 +4,7 @@ from catalyst.dl import Callback, CallbackOrder
 from sklearn.metrics import recall_score
 
 
-def macro_recall(outputs, targets):
+def macro_recall(outputs, targets, on_loader_end=False):
     pred_labels = [np.argmax(out, axis=1) for out in outputs]
     # target_col = ['grapheme_root', 'consonant_diacritic', 'vowel_diacritic']
     recall_grapheme = recall_score(pred_labels[0], targets[:, 0], average='macro')
@@ -12,6 +12,9 @@ def macro_recall(outputs, targets):
     recall_vowel = recall_score(pred_labels[2], targets[:, 2], average='macro')
     scores = [recall_grapheme, recall_consonant, recall_vowel]
     final_score = np.average(scores, weights=[2, 1, 1])
+    if on_loader_end is True:
+        print('Score : grapheme {}, consonant {}, vowel {}'.format(
+            recall_grapheme, recall_consonant, recall_vowel))
     return final_score
 
 
@@ -62,8 +65,8 @@ class MacroRecallCallback(Callback):
     def on_loader_end(self, state):
         outputs = [self.outputs_for_grapheme, self.outputs_for_consonant, self.outputs_for_vowel]
         targets = np.array(self.targets)
-        mean_macro_recall = macro_recall(outputs, targets)
-        state.metrics.epoch_values[state.loader_name][self.prefix] = mean_macro_recall
+        mean_macro_recall = macro_recall(outputs, targets, on_loader_end=True)
+        print('on_loader_end : ', mean_macro_recall)
 
     def _to_numpy(self, x):
         """

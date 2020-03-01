@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 # https://www.kaggle.com/c/bengaliai-cv19/discussion/128637
-def ohem_loss(cls_pred, cls_target, rate=0.7):
+def ohem_loss(cls_pred, cls_target, rate=0.75):
     batch_size = cls_pred.size(0)
     ohem_cls_loss = F.cross_entropy(cls_pred, cls_target, reduction='none', ignore_index=-1)
 
