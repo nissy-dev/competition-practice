@@ -7,9 +7,9 @@ from sklearn.metrics import recall_score
 def macro_recall(outputs, targets, on_loader_end=False):
     pred_labels = [np.argmax(out, axis=1) for out in outputs]
     # target_col = ['grapheme_root', 'consonant_diacritic', 'vowel_diacritic']
-    recall_grapheme = recall_score(pred_labels[0], targets[:, 0], average='macro')
-    recall_consonant = recall_score(pred_labels[1], targets[:, 1], average='macro')
-    recall_vowel = recall_score(pred_labels[2], targets[:, 2], average='macro')
+    recall_grapheme = recall_score(targets[:, 0], pred_labels[0], average='macro')
+    recall_consonant = recall_score(targets[:, 1], pred_labels[1], average='macro')
+    recall_vowel = recall_score(targets[:, 2], pred_labels[2], average='macro')
     scores = [recall_grapheme, recall_consonant, recall_vowel]
     final_score = np.average(scores, weights=[2, 1, 1])
     if on_loader_end is True:

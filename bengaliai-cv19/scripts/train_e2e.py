@@ -27,7 +27,7 @@ def main():
     BASE_LOGDIR = '/content/drive/My Drive/kaggle/bengaliai-cv19/logs'
     NUM_FOLDS = 5
     BATCH_SIZE = 64
-    EPOCHS = 10
+    EPOCHS = 20
     SEED = 1234
     SIZE = 224
     LR = 0.003
@@ -94,7 +94,7 @@ def main():
         scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience=5)
         callbacks = [
             MacroRecallCallback(),
-            EarlyStoppingCallback(patience=5)
+            # EarlyStoppingCallback(metric='macro_recall', patience=5)
         ]
 
         # catalyst trainer
@@ -102,7 +102,7 @@ def main():
         # model training
         runner.train(model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler,
                      loaders=loaders, callbacks=callbacks, logdir=logdir, num_epochs=EPOCHS,
-                     main_metric="macro_recall", verbose=True)
+                     main_metric="macro_recall", minimize_metric=False, verbose=False)
 
         # release memory
         del model, runner, train_loader, valid_loader, loaders
