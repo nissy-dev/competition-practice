@@ -22,7 +22,20 @@ class BaselineLoss(nn.Module):
         super(BaselineLoss, self).__init__()
 
     def forward(self, pred, target):
-        loss_func = nn.CrossEntropyLoss()
-        loss = loss_func(pred[0], target[:, 0]) + \
-            loss_func(pred[1], target[:, 1]) + loss_func(pred[2], target[:, 2])
+        criterion = nn.CrossEntropyLoss()
+        loss = criterion(pred[0], target[:, 0]) + \
+            criterion(pred[1], target[:, 1]) + criterion(pred[2], target[:, 2])
         return loss
+
+
+class MixupLoss(nn.Module):
+    def __init__(self):
+        super(MixupLoss, self).__init__()
+
+    def forward(self, preds, targets):
+        preds1, preds2, preds3 = preds
+        targets1, shuffled_targets1, targets2, shuffled_targets2, targets3, shuffled_targets2, lam = targets
+        criterion = nn.CrossEntropyLoss(reduction='mean')
+        return lam * criterion(preds1, targets1) + (1 - lam) * criterion(preds1, shuffled_targets1) + \
+            lam * criterion(preds2, targets2) + (1 - lam) * criterion(preds2, shuffled_targets2) + \
+            lam * criterion(preds3, targets3) + (1 - lam) * criterion(preds3, shuffled_targets2)

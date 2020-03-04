@@ -86,10 +86,18 @@
 
 ### TODO
 
-- ArcFaceLoss
-- Balance Sampler
-- AugMix
-- no CutOut
+ベース設定  
+optmizer : AdamW + OneCycle  
+epoch : 25
+
+- no aug 3/2
+- GeM 3/2
+- OHEM 3/2
+- only cutout 3/2
+- only Mixup
+- only Manifold Mixup
+- only Random Erasing
+- only CutMix
 - TTA
 
 ### 実験の結果
@@ -104,3 +112,4 @@
 - pending
   - L2 Softmax Loss (epoch 増やせば効くかも)
   - Center Loss
+    - https://github.com/KaiyangZhou/pytorch-center-loss/blob/master/center_loss.py

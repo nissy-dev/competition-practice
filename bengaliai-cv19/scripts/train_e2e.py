@@ -4,17 +4,19 @@ import torch
 import pretrainedmodels
 import albumentations as albu
 from torch.utils.data import DataLoader
-from torch.optim import Adam, lr_scheduler
+from torch.optim import Adam, AdamW, lr_scheduler  # noqa
 from catalyst.utils import get_device, set_global_seed
-from catalyst.dl import SupervisedRunner
-from catalyst.dl.callbacks import EarlyStoppingCallback
+from catalyst.dl import SupervisedRunner  # noqa
+from catalyst.dl.callbacks import EarlyStoppingCallback  # noqa
+from catalyst.contrib.nn import OneCycleLRWithWarmup
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 
 from dataset import BengaliAIDataset
 from read_data import read_data, prepare_image
 from custom_loss import BaselineLoss
 from model import BengaliBaselineClassifier
-from metrics import MacroRecallCallback
+from metrics import MacroRecallCallback  # noqa
+from runner import BengaliRunner
 from offline_models.efficientnet import CustomEfficientNet  # noqa
 from offline_models.se_resnext50_32x4d import se_resnext50_32x4d  # noqa
 
@@ -89,20 +91,18 @@ def main():
         # model = BengaliBaselineClassifier(pretrainedmodels=se_resnext50_32x4d(model_path=MODEL_PATH))
         # model = CustomEfficientNet.from_pretrained('efficientnet-b3', MODEL_PATH)
         model = model.to(device)
-        criterion = BaselineLoss()
-        optimizer = Adam(model.parameters(), lr=LR)
-        scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, patience=5)
-        callbacks = [
-            MacroRecallCallback(),
-            # EarlyStoppingCallback(metric='macro_recall', patience=5)
-        ]
+        criterions = {'train': BaselineLoss(), 'valid': BaselineLoss()}
+        optimizer = AdamW(model.parameters(), lr=LR)
+        scheduler = OneCycleLRWithWarmup(
+            optimizer, num_steps=EPOCHS,
+            lr_range=(0.001, 0.0001), warmup_steps=1
+        )
 
         # catalyst trainer
-        runner = SupervisedRunner(device=device)
+        runner = BengaliRunner(device=device)
         # model training
-        runner.train(model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler,
-                     loaders=loaders, callbacks=callbacks, logdir=logdir, num_epochs=EPOCHS,
-                     main_metric="macro_recall", minimize_metric=False, verbose=False)
+        runner.train(model=model, criterions=criterions, optimizer=optimizer, scheduler=scheduler,
+                     loaders=loaders, logdir=logdir, num_epochs=EPOCHS)
 
         # release memory
         del model, runner, train_loader, valid_loader, loaders
