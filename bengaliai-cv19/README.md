@@ -7,13 +7,13 @@
   - データの意味も理解できていないので、ベースができたら理解する
 - コンペのポイント
   - grapheme roots をとにかく精度良く当てること
-    - クラスがかなり多い (160)
+    - クラスがかなり多い (160 程度)
     - 不均衡なデータ
     - スコアにも重みが付けられている
   - 問題はどうやって、imbalance や misslabeling に対処するか...?
     - Balance Sampler
     - Custom Loss
-    - under sampling
+    - under/over sampling
 
 ## 実験
 
@@ -33,34 +33,9 @@
   - Augment
     - ShiftScaleRotate + CutOut
   - CV
-    - MultilabelStratifiedKFold
-    - hold out
-- ベース + alpha
-  - Model
-    - efficientnet-b3 (30 min / epoch)
-      - 精度的にはあまり変わらなかった
-    - se_resnext50_32x4d
-  - Loss
-    - OHEM
-      - 簡単なタスクとデータの少ない難しいタスクの両方が存在するデータに対して作られた
-      - 難しいデータを Loss から判断して、それらについて優先的に勾配を更新する(?)
-        - mining top 70% gradient for Backpropagation
-      - https://qiita.com/woody_egg/items/28a9656aafcb4cd9cebd
-      - https://www.slideshare.net/DeepLearningJP2016/dlfocal-loss-for-dense-object-detection
-    - metric learning loss
-      - https://qiita.com/yu4u/items/078054dfb5592cbb80cc
-      - ArcFaceLoss
-      - Center Loss
-      - L2 Softmax Loss
-  - Optmizer
-    - AdamW with OneCycle scheduler
-  - Augment
-    - Mixup
-      - 最終層の Mixup が良いかも..?
-    - AugMix
-      - https://www.kaggle.com/haqishen/augmix-based-on-albumentations
+    - MultilabelStratifiedKFold (one hold)
 
-### 資料
+### 過去コンペの Tips
 
 細かいところは以下を参照するのが良い(下手に Discussion を見るよりは、ここのやつを参考にするのが良い)
 
@@ -84,32 +59,39 @@
   - https://github.com/catalyst-team/catalyst/blob/master/examples/notebooks/classification-tutorial.ipynb
   - focal loss, custom callback, BalanceClassSampler などかなり実践的で参考になる
 
-### TODO
+### 実験
 
 ベース設定  
 optmizer : AdamW + OneCycle  
 epoch : 25
 
-- no aug 3/2
-- GeM 3/2
-- OHEM 3/2
-- only cutout 3/2
-- only Mixup
-- only Manifold Mixup
-- only Random Erasing
-- only CutMix
-- TTA
+この論文の内容をやる方針にする  
+https://arxiv.org/pdf/1812.01187.pdf
 
-### 実験の結果
-
-- 効いた
-  - AdamW + OneCycle
-- 変化なし
-  - GeM + FC
-- 効かなかった
-  - GeM + no FC
+- Model
+  - GeM
+  - ResNet50-D (論文参照)
+  - Manifold Mixup
+  - efficientnet-b3
+  - se_resnext50_32x4d
+- Augmentation
+  - Cutout
+  - Mixup
+  - CutMix
+- Loss
   - OHEM
-- pending
-  - L2 Softmax Loss (epoch 増やせば効くかも)
-  - Center Loss
+    - 簡単なタスクとデータの少ない難しいタスクの両方が存在するデータに対して作られた
+    - 難しいデータを Loss から判断して、それらについて優先的に勾配を更新する(?)
+      - mining top 70% gradient for Backpropagation
+    - https://qiita.com/woody_egg/items/28a9656aafcb4cd9cebd
+    - https://www.slideshare.net/DeepLearningJP2016/dlfocal-loss-for-dense-object-detection
+  - label smoothing
+    - https://www.kaggle.com/c/bengaliai-cv19/discussion/128115
+    - https://www.slideshare.net/DeepLearningJP2016/dlwhen-does-label-smoothing-help
+  - metric learning loss
+    - https://qiita.com/yu4u/items/078054dfb5592cbb80cc
+    - ArcFaceLoss or Center Loss
     - https://github.com/KaiyangZhou/pytorch-center-loss/blob/master/center_loss.py
+- Scheduler & Optimizer
+  - AdamW with OneCycle scheduler
+  - Cosine Annealing
