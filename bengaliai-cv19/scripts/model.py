@@ -62,7 +62,7 @@ class GeM(nn.Module):
 class BengaliBaselineClassifier(nn.Module):
     def __init__(self, n_grapheme=168, n_vowel=11, n_consonant=7,
                  pretrainedmodels=None, in_channels=3,
-                 hdim=1048, use_bn=True, pretrained=None):
+                 hdim=512, use_bn=True, pretrained=None):
         super(BengaliBaselineClassifier, self).__init__()
         self.n_grapheme = n_grapheme
         self.n_vowel = n_vowel
