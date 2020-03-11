@@ -70,15 +70,19 @@ class BengaliAIDataset(Dataset):
 
 
 # collate_fn
-def mixup(batch, alpha=0.4):
-    data, labels = batch
-    targets1, targets2, targets3 = labels
-    indices = torch.randperm(data.size(0))
-    shuffled_data = data[indices]
-    shuffled_targets1 = targets1[indices]
-    shuffled_targets2 = targets2[indices]
-    shuffled_targets3 = targets3[indices]
-    lam = np.random.beta(alpha, alpha)
-    data = data * lam + shuffled_data * (1 - lam)
-    targets = [targets1, shuffled_targets1, targets2, shuffled_targets2, targets3, shuffled_targets3, lam]
-    return data, targets
+def mixup_collate_fn(batch, alpha=0.4):
+    images, labels = list(zip(*batch))
+    if np.random.rand() < 0.25:
+        data = torch.stack(images)
+        targets = torch.stack(labels)
+        indices = torch.randperm(data.size(0))
+        shuffled_data = data[indices]
+        shuffled_targets = targets[indices]
+        lam = np.random.beta(alpha, alpha)
+        data = data * lam + shuffled_data * (1 - lam)
+        targets = [targets, shuffled_targets, lam]
+        return data, targets
+    else:
+        images = torch.stack(images)
+        labels = torch.stack(labels)
+        return images, labels

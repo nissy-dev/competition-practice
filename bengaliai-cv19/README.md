@@ -5,6 +5,7 @@
 - まずはベースラインを作ることに徹する
   - シングルモデルでスコアを向上させることに徹したい
   - データの意味も理解できていないので、ベースができたら理解する
+    - https://bengali.ai/wp-content/uploads/CV19-COCO-Grapheme.pdf
 - コンペのポイント
   - grapheme roots をとにかく精度良く当てること
     - クラスがかなり多い (160 程度)
@@ -95,3 +96,10 @@ https://arxiv.org/pdf/1812.01187.pdf
 - Scheduler & Optimizer
   - AdamW with OneCycle scheduler
   - Cosine Annealing
+
+採用
+
+- GeM
+- label smoothing
+- Cutout
+- Mixup
