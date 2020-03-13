@@ -67,6 +67,7 @@ optmizer : AdamW + OneCycle
 epoch : 25
 
 この論文の内容をやる方針にする  
+Bag of Tricks for Image Classification with Convolutional Neural Networks  
 https://arxiv.org/pdf/1812.01187.pdf
 
 - Model
@@ -96,10 +97,3 @@ https://arxiv.org/pdf/1812.01187.pdf
 - Scheduler & Optimizer
   - AdamW with OneCycle scheduler
   - Cosine Annealing
-
-採用
-
-- GeM
-- label smoothing
-- Cutout
-- Mixup
