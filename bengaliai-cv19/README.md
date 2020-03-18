@@ -18,7 +18,8 @@
 - sub を出せなかった
   - kernel error で出せなかった...
   - やはりコンペには早めに参加するべき
-  - 今回もかなり shake したので、出しとくことに意味はある, Public LB は鵜呑みすぎない
+  - 今回もかなり shake したので、出しとくことに意味はある
+    - Public LB は鵜呑みにしすぎない
 - 実験をもう少し高速に回せるとよかった
   - Catalyst に固執しすぎた
     - 細かなところの修正が必要になったりするので自分で組むのがやっぱり良い
@@ -36,7 +37,7 @@
   - https://arxiv.org/pdf/1812.01187.pdf
 - data augmentation
   - データ拡張のまとめ : https://blog.shikoan.com/manual-augmentation/
-  - mixup, cutout, random erasing. AugMix : http://nonbiri-tereka.hatenablog.com/entry/2020/01/06/082921
+  - mixup, cutout, random erasing, augmix : http://nonbiri-tereka.hatenablog.com/entry/2020/01/06/082921
   - manifold mixup : https://medium.com/@akichan_f/%E6%9C%80%E7%B5%82%E5%B1%A4%E3%81%A7mixup%E3%81%97%E3%81%9F%E3%82%89%E8%89%AF%E3%81%95%E3%81%92%E3%81%A0%E3%81%A3%E3%81%9F%E4%BB%B6-bd2ff167c388
 - generalized mean pooling (GeM)
   - pool の一般化 (p=1 で mean, p=∞ で max と等しい), 論文では p=3 を推奨
