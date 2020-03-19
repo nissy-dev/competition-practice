@@ -12,7 +12,7 @@ class BengaliRunner:
         self.device = device
 
     def train(self, model, criterions, optimizer, loaders, scheduler=None, logdir=None,
-              num_epochs=20, score_func=None):
+              num_epochs=20, score_func=None, is_greater_better=True):
         # validation
         for dict_val in [criterions, loaders]:
             if 'train' in dict_val and 'valid' in dict_val:
@@ -26,7 +26,7 @@ class BengaliRunner:
         valid_loader = loaders['valid']
         train_criterion = criterions['valid']
         valid_criterion = criterions['valid']
-        best_score = -1.0
+        best_score = -1.0 if is_greater_better else 10000000
         best_avg_val_loss = 100
         log_df = pd.DataFrame(
             [], columns=['epoch', 'loss', 'valid_loss', 'score', 'recall_grapheme',
@@ -63,7 +63,12 @@ class BengaliRunner:
                     torch.save(best_param_loss, save_path)
                     print('Save the best model on Epoch {}'.format(epoch + 1))
             else:
-                if best_score < score:
+                if is_greater_better and best_score < score:
+                    best_score = score
+                    best_param_score = model.state_dict()
+                    torch.save(best_param_score, save_path)
+                    print('Save the best model on Epoch {}'.format(epoch + 1))
+                elif is_greater_better is False and best_score > score:
                     best_score = score
                     best_param_score = model.state_dict()
                     torch.save(best_param_score, save_path)
