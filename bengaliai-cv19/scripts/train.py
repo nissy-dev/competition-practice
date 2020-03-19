@@ -15,7 +15,7 @@ from dataset import BengaliAIDataset
 from read_data import read_data, prepare_image
 from custom_loss import BaselineLoss
 from model import BengaliBaselineClassifier
-from metrics import MacroRecallCallback  # noqa
+from metrics import macro_recall, MacroRecallCallback  # noqa
 from runner import BengaliRunner
 from offline_models.efficientnet import CustomEfficientNet  # noqa
 from offline_models.se_resnext50_32x4d import se_resnext50_32x4d  # noqa
@@ -102,7 +102,7 @@ def main():
         runner = BengaliRunner(device=device)
         # model training
         runner.train(model=model, criterions=criterions, optimizer=optimizer, scheduler=scheduler,
-                     loaders=loaders, logdir=logdir, num_epochs=EPOCHS)
+                     loaders=loaders, logdir=logdir, num_epochs=EPOCHS, score_func=macro_recall)
 
         # release memory
         del model, runner, train_loader, valid_loader, loaders
