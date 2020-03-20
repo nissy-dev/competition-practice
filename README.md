@@ -1,4 +1,4 @@
-# ds-competition
+# competition-practice
 
 Codes for data science competition
 
