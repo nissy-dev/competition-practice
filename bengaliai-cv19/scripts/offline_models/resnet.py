@@ -2,23 +2,6 @@ import torch
 import torch.nn as nn
 
 
-IMAGE_RGB_MEAN = [0.485, 0.456, 0.406]
-IMAGE_RGB_STD = [0.229, 0.224, 0.225]
-
-
-class RGB(nn.Module):
-    def __init__(self, mean=IMAGE_RGB_MEAN, std=IMAGE_RGB_STD):
-        super(RGB, self).__init__()
-        self.register_buffer('mean', torch.zeros(1, 3, 1, 1))
-        self.register_buffer('std', torch.ones(1, 3, 1, 1))
-        self.mean.data = torch.FloatTensor(mean).view(self.mean.shape)
-        self.std.data = torch.FloatTensor(std).view(self.std.shape)
-
-    def forward(self, x):
-        x = (x - self.mean) / self.std
-        return x
-
-
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,

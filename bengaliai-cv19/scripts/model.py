@@ -4,6 +4,22 @@ import torch.nn.functional as F
 from torch.nn.parameter import Parameter
 
 
+IMAGE_RGB_MEAN = [0.485, 0.456, 0.406]
+IMAGE_RGB_STD = [0.229, 0.224, 0.225]
+
+
+class RGB(nn.Module):
+    def __init__(self, mean=IMAGE_RGB_MEAN, std=IMAGE_RGB_STD):
+        super(RGB, self).__init__()
+        self.register_buffer('mean', torch.zeros(1, 3, 1, 1))
+        self.register_buffer('std', torch.ones(1, 3, 1, 1))
+        self.mean.data = torch.FloatTensor(mean).view(self.mean.shape)
+        self.std.data = torch.FloatTensor(std).view(self.std.shape)
+
+    def forward(self, x):
+        x = (x - self.mean) / self.std
+        return x
+
 # dropout and bn and residualに対応したlinear
 class LinearBlock(nn.Module):
     def __init__(self, in_features=None, out_features=None, bias=True,
@@ -68,6 +84,7 @@ class BengaliBaselineClassifier(nn.Module):
         self.n_vowel = n_vowel
         self.n_consonant = n_consonant
         self.base_model = pretrainedmodels
+        self.rgb = RGB()
         self.conv0 = nn.Conv2d(in_channels, 3, kernel_size=3, stride=1, padding=1, bias=True)
         inch = self.base_model.last_linear.in_features
         self.fc1 = LinearBlock(inch, hdim, use_bn=use_bn, activation=F.relu)
@@ -76,7 +93,8 @@ class BengaliBaselineClassifier(nn.Module):
         self.logits_for_consonant = LinearBlock(hdim, n_consonant, use_bn=False, activation=None)
 
     def forward(self, x):
-        h = self.conv0(x)
+        h = self.rgb(x)
+        h = self.conv0(h)
         h = self.base_model.features(h)
         # sum pool (batch_size × inch)
         h = torch.sum(h, dim=(-1, -2))
@@ -107,7 +125,8 @@ class CustomBengaliBaselineClassifier(nn.Module):
         self.logits_for_consonant = LinearBlock(hdim, n_consonant, use_bn=False, activation=None)
 
     def forward(self, x):
-        h = self.conv0(x)
+        h = self.rgb(x)
+        h = self.conv0(h)
         h = self.base_model.features(h)
         # gem pool
         h = self.avg_pool(h)

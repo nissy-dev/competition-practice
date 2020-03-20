@@ -10,23 +10,6 @@ import torch.nn as nn
 from collections import OrderedDict
 
 
-IMAGE_RGB_MEAN = [0.485, 0.456, 0.406]
-IMAGE_RGB_STD = [0.229, 0.224, 0.225]
-
-
-class RGB(nn.Module):
-    def __init__(self, mean=IMAGE_RGB_MEAN, std=IMAGE_RGB_STD):
-        super(RGB, self).__init__()
-        self.register_buffer('mean', torch.zeros(1, 3, 1, 1))
-        self.register_buffer('std', torch.ones(1, 3, 1, 1))
-        self.mean.data = torch.FloatTensor(mean).view(self.mean.shape)
-        self.std.data = torch.FloatTensor(std).view(self.std.shape)
-
-    def forward(self, x):
-        x = (x - self.mean) / self.std
-        return x
-
-
 class SEModule(nn.Module):
     def __init__(self, channels, reduction):
         super(SEModule, self).__init__()
@@ -131,7 +114,6 @@ class SENet(nn.Module):
             - For all models: 1000
         """
         super(SENet, self).__init__()
-        self.rgb = RGB()
         self.inplanes = inplanes
         if input_3x3:
             layer0_modules = [
@@ -224,8 +206,6 @@ class SENet(nn.Module):
         return nn.Sequential(*layers)
 
     def features(self, x):
-        # TODO: In case, use imagenet weight
-        x = self.rgb(x)
         x = self.layer0(x)
         x = self.layer1(x)
         x = self.layer2(x)

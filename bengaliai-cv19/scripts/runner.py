@@ -11,21 +11,12 @@ class BengaliRunner:
     def __init__(self, device='cpu'):
         self.device = device
 
-    def train(self, model, criterions, optimizer, loaders, scheduler=None, logdir=None,
+    def train(self, model, criterion, optimizer, loaders, scheduler=None, logdir=None,
               num_epochs=20, score_func=None, is_greater_better=True):
-        # validation
-        for dict_val in [criterions, loaders]:
-            if 'train' in dict_val and 'valid' in dict_val:
-                pass
-            else:
-                raise ValueError('You should set train and valid key.')
-
         # setup training
         model = model.to(self.device)
         train_loader = loaders['train']
         valid_loader = loaders['valid']
-        train_criterion = criterions['valid']
-        valid_criterion = criterions['valid']
         best_score = -1.0 if is_greater_better else 10000000
         best_avg_val_loss = 100
         log_df = pd.DataFrame(
@@ -39,9 +30,9 @@ class BengaliRunner:
             torch.cuda.empty_cache()
             gc.collect()
             # train for one epoch
-            avg_loss = self._train_model(model, train_criterion, optimizer, train_loader, scheduler)
+            avg_loss = self._train_model(model, criterion, optimizer, train_loader, scheduler)
             # evaluate on validation set
-            avg_val_loss, score, scores = self._validate_model(model, valid_criterion, valid_loader, score_func)
+            avg_val_loss, score, scores = self._validate_model(model, criterion, valid_loader, score_func)
 
             # log
             elapsed_time = time.time() - start_time
@@ -96,12 +87,14 @@ class BengaliRunner:
                 labels = labels.to(self.device)
 
                 # output
-                output_valid = model(images)
-                logits = [out.detach().cpu().numpy() for out in output_valid]
+                logits_grapheme, logits_consonant, logits_vowel = model(images)
+                logits_grapheme = logits_grapheme.detach().cpu().numpy()
+                logits_consonant = logits_consonant.detach().cpu().numpy()
+                logits_vowel = logits_vowel.detach().cpu().numpy()
                 # target_col = ['grapheme_root', 'consonant_diacritic', 'vowel_diacritic']
-                grapheme_preds.extend(logits[0])
-                consonant_preds.extend(logits[1])
-                vowel_preds.extend(logits[2])
+                grapheme_preds.extend(logits_grapheme)
+                consonant_preds.extend(logits_consonant)
+                vowel_preds.extend(logits_vowel)
 
         return grapheme_preds, consonant_preds, vowel_preds
 

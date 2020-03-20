@@ -1,6 +1,6 @@
 # competition-practice
 
-Codes for data science competition
+Practice codes for data science competition
 
 ## Kaggle
 
